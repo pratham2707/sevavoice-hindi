@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SevaVoice Hindi — हिंदी वॉइस एजेंट डेमो</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; color: #333; line-height: 1.6; padding: 20px; max-width: 800px; margin: 0 auto; }
+    h1 { color: #1a1a2e; margin-bottom: 8px; text-align: center; }
+    .subtitle { text-align: center; color: #666; margin-bottom: 24px; }
+    .status-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; padding: 16px; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .status-dot { width: 12px; height: 12px; border-radius: 50%; background: #e74c3c; display: inline-block; flex-shrink: 0; }
+    .status-dot.connected { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
+    .status-text { font-size: 13px; color: #555; flex: 1; min-width: 120px; }
+    .btn { padding: 11px 18px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.18s; display: inline-flex; align-items: center; gap: 8px; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-primary { background: #3498db; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #2980b9; transform: translateY(-1px); }
+    .btn-success { background: #2ecc71; color: white; }
+    .btn-success:hover:not(:disabled) { background: #27ae60; transform: translateY(-1px); }
+    .btn-mic { background: #e74c3c; color: white; width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0; font-size: 20px; }
+    .btn-mic.listening { background: #2ecc71; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); } 70% { transform: scale(1.08); box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); } }
+    .input-group { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; background: #fff; padding: 16px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    input[type="text"] { flex: 1; padding: 12px 16px; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; }
+    input[type="text"]:focus { outline: none; border-color: #3498db; }
+    .audio-section { margin-bottom: 24px; padding: 18px; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .audio-section .section-title { font-size: 13px; font-weight: 700; color: #1a1a2e; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    audio { width: 100%; margin-top: 8px; }
+    .fallback-text { margin-top: 10px; padding: 12px; background: #f8f9fa; border-radius: 8px; font-style: italic; color: #666; display: none; border: 1px dashed #ddd; }
+    .journey { margin-bottom: 24px; }
+    .journey h3 { margin-bottom: 14px; color: #1a1a2e; font-size: 17px; }
+    .step-card { background: #fff; padding: 18px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 14px; border: 2px solid #e8e8e8; transition: border-color 0.2s; }
+    .step-card.active { border-color: #3498db; background: #f0f7ff; }
+    .step-card.completed { border-color: #2ecc71; background: #f0fff5; }
+    .step-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .step-number { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; background: #3498db; color: white; border-radius: 50%; font-size: 15px; font-weight: 800; flex-shrink: 0; }
+    .step-title { font-weight: 700; color: #1a1a2e; font-size: 15px; }
+    .step-meta { font-size: 13px; color: #666; margin-bottom: 12px; }
+    .step-meta code { background: #f1f1f1; padding: 2px 6px; border-radius: 4px; font-family: inherit; }
+    .step-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .response-area { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; border-left: 4px solid #3498db; }
+<div class="audio-section">
+    <div class="section-title">एजेंट का जवाब — ऑडियो / Agent Response Audio</div>
+    <audio id="ttsAudio" controls></audio>
+    <button class="btn btn-primary" id="replayBtn" onclick="replayAudio()" style="margin-top: 10px;">🔊 दोबारा चलाएं / Replay</button>
+    <div class="fallback-text" id="ttsFallback">ऑडियो उपलब्ध नहीं है। नीचे टेक्स्ट देखें।</div>
+</div>
+<div class="journey">
+    <h3>चार-चरणीय बुकिंग यात्रा / 4-Step Booking Journey</h3>
+    <div class="step-card" id="step1">
+        <div class="step-header">
+            <span class="step-number">1</span>
+            <span class="step-title">नागरिक संदर्भ खोजें / Citizen Context Lookup</span>
+        </div>
+        <div class="step-meta">फ़ोन / Phone: <code>+919876543210</code></div>
+        <div class="step-actions">
+            <button class="btn btn-primary" onclick="runLookup()">डेटा लाएं / Lookup</button>
+        </div>
+    </div>
+    <div class="step-card" id="step2">
+        <div class="step-header">
+            <span class="step-number">2</span>
+            <span class="step-title">सेवा स्लॉट जाँचना / Check Service Slots</span>
+        </div>
+        <div class="step-meta">तारीख / Date: <code id="slotDate">2026-11-22</code></div>
+        <div class="step-actions">
+            <input type="text" id="slotDateInput" value="2026-11-22" style="padding:8px 10px; border:1px solid #ccc; border-radius:6px; font-size:14px; max-width:150px;" />
+            <button class="btn btn-primary" onclick="runSlots()">स्लॉट जाँचे / Check Slots</button>
+        </div>
+    </div>
+    <div class="step-card" id="step3">
+        <div class="step-header">
+            <span class="step-number">3</span>
+            <span class="step-title">बुकिंग अनुरोध / Request Booking</span>
+        </div>
+        <div class="step-meta">पुष्टि के बिना अनुरोध भेजें — पुष्टि संकेत प्राप्त होगा / Request without confirmation — confirmation prompt returned</div>
+        <div class="step-actions">
+            <button class="btn btn-primary" onclick="runBookRequest()">बुकिंग अनुरोध / Request Booking</button>
+            <button class="btn btn-success hidden" id="confirmBtn" onclick="runBookConfirm()">✅ पुष्टि करें बुक करें / Confirm &amp; Book Slot</button>
+        </div>
+    </div>
+</div>
+    .response-label { font-size: 12px; font-weight: 700; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .response-text { font-size: 18px; color: #1a1a2e; white-space: pre-wrap; margin-bottom: 14px; }
+    .booking-ref { font-size: 19px; font-weight: 800; color: #2ecc71; margin-top: 8px; }
+    .hidden { display: none !important; }
+    .hindi { font-family: 'Noto Sans Devanagari', 'Segoe UI', 'Mangal', sans-serif; }
+    .small-hint { font-size: 12px; color: #888; margin-top: 6px; }
+</style>
+</head>
+<body>
+<h1>🎤 SevaVoice Hindi</h1>
+<p class="subtitle">हिंदी वॉइस एजेंट • सेवा बुकिंग डेमो • Build with Agora Hackathon</p>
+<div class="status-bar">
+    <span class="status-dot" id="statusDot"></span>
+    <span class="status-text" id="statusText">सत्र डिस्कनेक्टेड / Session disconnected</span>
+    <span class="status-text" id="channelText" style="font-size:12px;">चैनल: sevavoice-hindi-demo</span>
+    <button class="btn btn-primary" id="startSessionBtn" onclick="startSession()">🚀 सत्र शुरू करें / Start Agora Session</button>
+</div>
+<div class="response-area">
+    <div class="response-label" id="responseLabel">एजेंट जवाब / Agent Response</div>
+    <div class="response-text hindi" id="responseText">कृपया ऊपर किसी बटन पर क्लिक करें या हिंदी में बोलें/टाइप करें।</div>
+    <div class="booking-ref hidden" id="bookingRef"></div>
+</div>
+<div class="input-group">
+<script>
+    const ttsAudio = document.getElementById('ttsAudio');
+    const replayBtn = document.getElementById('replayBtn');
+    const ttsFallback = document.getElementById('ttsFallback');
+    const responseText = document.getElementById('responseText');
+    const responseLabel = document.getElementById('responseLabel');
+    const bookingRef = document.getElementById('bookingRef');
+    const userInput = document.getElementById('userInput');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const micBtn = document.getElementById('micBtn');
+    const startSessionBtn = document.getElementById('startSessionBtn');
+    let recognition = null;
+    let isListening = false;
+    let lastBookPayload = null;
+    function initSpeechRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            showResponse('चेतावनी: इस ब्राउज़र में वेब स्पीच API समर्थित नहीं है। कृपया टेक्स्ट इनपुट का उपयोग करें।', 'चेतावनी / Warning');
+            micBtn.style.display = 'none';
+            document.getElementById('micHint').textContent = 'इस ब्राउज़र में वॉइस इनपुट उपलब्ध नहीं है। टेक्स्ट टाइप करके भेजें।';
+            return null;
+        }
+        const rec = new SpeechRecognition();
+        rec.lang = 'hi-IN';
+        rec.continuous = false;
+        rec.interimResults = false;
+        return rec;
+    }
+    recognition = initSpeechRecognition();
+    if (recognition) {
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            userInput.value = transcript;
+            isListening = false;
+            micBtn.classList.remove('listening');
+            micBtn.title = 'हिंदी में बोलें / Speak in Hindi';
+            sendInput();
+        };
+        recognition.onend = () => {
+            isListening = false;
+            micBtn.classList.remove('listening');
+            micBtn.title = 'हिंदी में बोलें / Speak in Hindi';
+        };
+        recognition.onerror = (event) => {
+            console.error('Speech error:', event.error);
+    async function apiPost(endpoint, body) {
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body || {})
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const ct = res.headers.get('content-type') || '';
+            if (ct.includes('application/json')) return await res.json();
+            if (ct.includes('audio/')) return { audio: await res.arrayBuffer(), ok: true };
+            return await res.text();
+        } catch (err) {
+            showResponse('सर्वर त्रुटि: ' + err.message, 'त्रुटि / Error');
+            throw err;
+        }
+    }
+    async function playTTS(text) {
+        if (!text) return;
+        try {
+            const res = await fetch('/tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text })
+            });
+            if (!res.ok) {
+                ttsFallback.style.display = 'block';
+                replayBtn.style.display = 'none';
+                ttsAudio.style.display = 'none';
+                return;
+            }
+            const ct = res.headers.get('content-type') || '';
+            if (ct.includes('audio/')) {
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                ttsAudio.src = url;
+                ttsAudio.style.display = 'block';
+                replayBtn.style.display = 'inline-block';
+                ttsFallback.style.display = 'none';
+    async function startSession() {
+        try {
+            const data = await apiPost('/session/start', { user_id: 'demo-user-1' });
+            statusDot.classList.add('connected');
+            statusText.textContent = 'सत्र कनेक्टेड / Session connected';
+            startSessionBtn.textContent = 'सत्र चालू है / Session Active';
+            startSessionBtn.disabled = true;
+            showResponse(data.message || 'अगोरा सत्र प्रारंभ किया गया।', 'सत्र स्थिति / Session Status');
+            await playTTS(data.message || 'नमस्ते! सेवा वॉइस हिंदी एजेंट में आपका स्वागत है।');
+        } catch (e) {}
+    }
+    async function runLookup() {
+        try {
+            const data = await apiPost('/lookup', { phone: '+919876543210' });
+            showResponse(data.summary, 'चरण 1: नागरिक संदर्भ / Step 1: Citizen Context');
+            await playTTS(data.summary);
+        } catch (e) {}
+    }
+    async function runSlots() {
+        const date = document.getElementById('slotDateInput').value || '2026-11-22';
+        document.getElementById('slotDate').textContent = date;
+        try {
+            const data = await apiPost('/slots', { date: date });
+            showResponse(data.result, 'चरण 2: सेवा स्लॉट / Step 2: Service Slots');
+            await playTTS(data.result);
+        } catch (e) {}
+    }
+    async function runBookRequest() {
+        const phone = '+919876543210';
+        const date = document.getElementById('slotDateInput').value || '2026-11-22';
+        const time = '10:00';
+        lastBookPayload = { phone, date, time, user_confirmed: false };
+        try {
+            const data = await apiPost('/book', lastBookPayload);
+            showResponse(data.result, 'चरण 3: बुकिंग अनुरोध / Step 3: Request Booking');
+            await playTTS(data.result);
+            if (data.result && data.result.includes('पुष्टि करें')) {
+                document.getElementById('confirmBtn').classList.remove('hidden');
+            }
+        } catch (e) {}
+    }
+    async function runBookConfirm() {
+        if (!lastBookPayload) {
+            showResponse('पहले बुकिंग अनुरोध भेजें।', 'त्रुटि / Error');
+            return;
+        }
+        const confirmPayload = { ...lastBookPayload, user_confirmed: true };
+        try {
+            const data = await apiPost('/book', confirmPayload);
+            showResponse(data.result, 'चरण 4: बुकिंग पुष्टि / Step 4: Confirm Booking');
+            await playTTS(data.result);
+            const refMatch = data.result && data.result.match(/संदर्भ संख्या[: ]*([A-Z0-9]+)/);
+            if (refMatch) {
+                bookingRef.textContent = 'बुकिंग संदर्भ संख्या: ' + refMatch[1];
+                bookingRef.classList.remove('hidden');
+            }
+            document.getElementById('confirmBtn').classList.add('hidden');
+        } catch (e) {}
+    }
+    function routeIntent(text) {
+        const t = (text || '').toLowerCase();
+        if (t.includes('लुकअप') || t.includes('संदर्भ') || t.includes('lookup') || t.includes('नागरिक') || t.includes('खोज')) {
+            runLookup();
+            return true;
+        }
+        if (t.includes('स्लॉट') || t.includes('slots') || t.includes('अपॉइंटमेंट') || t.includes('तारीख') || t.includes('जाँच')) {
+            runSlots();
+            return true;
+        }
+        if (t.includes('बुक') || t.includes('बुकिंग') || t.includes('book') || t.includes('अनुरोध')) {
+            runBookRequest();
+            return true;
+        }
+        if (t.includes('पुष्टि') || t.includes('हाँ') || t.includes('हां') || t.includes('confirm') || t.includes('स्लॉट बुक')) {
+            runBookConfirm();
+            return true;
+        }
+        return false;
+    }
+    async function sendInput() {
+        const text = userInput.value.trim();
+        if (!text) return;
+        if (routeIntent(text)) return;
+        showResponse('आपने कहा: ' + text, 'उपयोगकर्ता इनपुट / User Input');
+        await playTTS(text);
+    }
+    userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendInput();
+    });
+</script>
+</body>
+</html>
+                try { ttsAudio.play(); } catch {}
+            } else {
+                const data = await res.json();
+                ttsAudio.style.display = 'none';
+                replayBtn.style.display = 'none';
+                ttsFallback.style.display = 'block';
+                ttsFallback.textContent = data.note || 'ऑडियो उपलब्ध नहीं है।';
+            }
+        } catch (err) {
+            ttsFallback.style.display = 'block';
+            ttsFallback.textContent = 'TTS त्रुटि: ' + err.message;
+        }
+    }
+    function replayAudio() { try { ttsAudio.play(); } catch {} }
+    function showResponse(text, label = 'एजेंट जवाब / Agent Response') {
+        responseText.textContent = text;
+        responseLabel.textContent = label;
+        responseText.classList.add('hindi');
+    }
+            isListening = false;
+            micBtn.classList.remove('listening');
+            micBtn.title = 'हिंदी में बोलें / Speak in Hindi';
+            if (event.error !== 'no-speech' && event.error !== 'aborted') {
+                showResponse('वॉइस इनपुट त्रुटि: ' + event.error, 'त्रुटि / Error');
+            }
+        };
+    }
+    function toggleMic() {
+        if (!recognition) return;
+        if (isListening) {
+            try { recognition.stop(); } catch {}
+            isListening = false;
+            micBtn.classList.remove('listening');
+            micBtn.title = 'हिंदी में बोलें / Speak in Hindi';
+        } else {
+            try { recognition.start(); } catch (e) {
+                showResponse('माइक्रोफ़ोन शुरू नहीं हो सका। कृपया माइक अनुमति दें।', 'त्रुटि / Error');
+                return;
+            }
+            isListening = true;
+            micBtn.classList.add('listening');
+            micBtn.title = 'सुन रहा है... / Listening...';
+        }
+    }
+    <input type="text" id="userInput" placeholder="हिंदी में बोलें या टाइप करें — जैसे "लुकअप", "स्लॉट", "बुकिंग", "पुष्टि" / Speak or type in Hindi... />
+    <button class="btn btn-mic" id="micBtn" onclick="toggleMic()" title="हिंदी में बोलें / Speak in Hindi">🎙️</button>
+    <button class="btn btn-primary" onclick="sendInput()">भेजें / Send</button>
+</div>
+<p class="small-hint" id="micHint" style="margin-bottom:0;">टिप: माइक्रोफ़ोन बटन दबाएं और हिंदी बोलें, या टेक्स्ट टाइप करके एंटर दबाएं।</p>

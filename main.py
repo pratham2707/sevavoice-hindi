@@ -11,10 +11,11 @@ Endpoints:
 """
 
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel
 from typing import Optional
 import uvicorn
+from pathlib import Path
 
 from config import settings
 from agent_service import AgentService
@@ -59,6 +60,13 @@ def root():
         "status": "running",
         "message": "सेवा वॉइस हिंदी एजेंट सर्वर चल रहा है।",
     }
+
+
+@app.get("/demo", response_class=HTMLResponse)
+def demo_ui():
+    """Serve the browser demo UI at GET /demo."""
+    demo_path = Path(__file__).resolve().parent / "demo.html"
+    return HTMLResponse(content=demo_path.read_text(encoding="utf-8"))
 
 
 @app.post("/session/start")
