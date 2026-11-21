@@ -114,6 +114,11 @@
     let recognition = null;
     let isListening = false;
     let lastBookPayload = null;
+    function showResponse(text, label = 'एजेंट जवाब / Agent Response') {
+        responseText.textContent = text;
+        responseLabel.textContent = label;
+        responseText.classList.add('hindi');
+    }
     function initSpeechRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
@@ -186,6 +191,12 @@
                 ttsAudio.style.display = 'block';
                 replayBtn.style.display = 'inline-block';
                 ttsFallback.style.display = 'none';
+            } else {
+                const data = await res.json();
+                ttsAudio.style.display = 'none';
+                replayBtn.style.display = 'none';
+                ttsFallback.style.display = 'block';
+                ttsFallback.textContent = data.note || 'ऑडियो उपलब्ध नहीं है।';
             }
         } catch (err) {
             ttsFallback.style.display = 'block';
