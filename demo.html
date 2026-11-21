@@ -145,6 +145,8 @@
         };
         recognition.onerror = (event) => {
             console.error('Speech error:', event.error);
+        };
+    }
     async function apiPost(endpoint, body) {
         try {
             const res = await fetch(endpoint, {
@@ -184,6 +186,12 @@
                 ttsAudio.style.display = 'block';
                 replayBtn.style.display = 'inline-block';
                 ttsFallback.style.display = 'none';
+            }
+        } catch (err) {
+            ttsFallback.style.display = 'block';
+            ttsFallback.textContent = 'TTS त्रुटि: ' + err.message;
+        }
+    }
     async function startSession() {
         try {
             const data = await apiPost('/session/start', { user_id: 'demo-user-1' });
