@@ -41,6 +41,9 @@
     .step-meta code { background: #f1f1f1; padding: 2px 6px; border-radius: 4px; font-family: inherit; }
     .step-actions { display: flex; gap: 10px; flex-wrap: wrap; }
     .response-area { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; border-left: 4px solid #3498db; }
+</style>
+</head>
+<body>
 <div class="audio-section">
     <div class="section-title">एजेंट का जवाब — ऑडियो / Agent Response Audio</div>
     <audio id="ttsAudio" controls></audio>
@@ -282,52 +285,3 @@
 </script>
 </body>
 </html>
-                try { ttsAudio.play(); } catch {}
-            } else {
-                const data = await res.json();
-                ttsAudio.style.display = 'none';
-                replayBtn.style.display = 'none';
-                ttsFallback.style.display = 'block';
-                ttsFallback.textContent = data.note || 'ऑडियो उपलब्ध नहीं है।';
-            }
-        } catch (err) {
-            ttsFallback.style.display = 'block';
-            ttsFallback.textContent = 'TTS त्रुटि: ' + err.message;
-        }
-    }
-    function replayAudio() { try { ttsAudio.play(); } catch {} }
-    function showResponse(text, label = 'एजेंट जवाब / Agent Response') {
-        responseText.textContent = text;
-        responseLabel.textContent = label;
-        responseText.classList.add('hindi');
-    }
-            isListening = false;
-            micBtn.classList.remove('listening');
-            micBtn.title = 'हिंदी में बोलें / Speak in Hindi';
-            if (event.error !== 'no-speech' && event.error !== 'aborted') {
-                showResponse('वॉइस इनपुट त्रुटि: ' + event.error, 'त्रुटि / Error');
-            }
-        };
-    }
-    function toggleMic() {
-        if (!recognition) return;
-        if (isListening) {
-            try { recognition.stop(); } catch {}
-            isListening = false;
-            micBtn.classList.remove('listening');
-            micBtn.title = 'हिंदी में बोलें / Speak in Hindi';
-        } else {
-            try { recognition.start(); } catch (e) {
-                showResponse('माइक्रोफ़ोन शुरू नहीं हो सका। कृपया माइक अनुमति दें।', 'त्रुटि / Error');
-                return;
-            }
-            isListening = true;
-            micBtn.classList.add('listening');
-            micBtn.title = 'सुन रहा है... / Listening...';
-        }
-    }
-    <input type="text" id="userInput" placeholder="हिंदी में बोलें या टाइप करें — जैसे "लुकअप", "स्लॉट", "बुकिंग", "पुष्टि" / Speak or type in Hindi... />
-    <button class="btn btn-mic" id="micBtn" onclick="toggleMic()" title="हिंदी में बोलें / Speak in Hindi">🎙️</button>
-    <button class="btn btn-primary" onclick="sendInput()">भेजें / Send</button>
-</div>
-<p class="small-hint" id="micHint" style="margin-bottom:0;">टिप: माइक्रोफ़ोन बटन दबाएं और हिंदी बोलें, या टेक्स्ट टाइप करके एंटर दबाएं।</p>

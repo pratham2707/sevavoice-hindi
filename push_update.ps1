@@ -25,8 +25,11 @@ if (-not (Test-Path ".git")) {
 }
 
 # Check that .env is NOT tracked by git
+$prevErrorAction = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
 $trackedEnv = git ls-files --error-unmatch .env 2>$null
-if ($trackedEnv) {
+$ErrorActionPreference = $prevErrorAction
+if ($LASTEXITCODE -eq 0 -and $trackedEnv) {
     Write-Host "ERROR: .env is tracked by git! Remove it before pushing." -ForegroundColor Red
     Write-Host "Run: git rm --cached .env" -ForegroundColor Yellow
     Pop-Location
