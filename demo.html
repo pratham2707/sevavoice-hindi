@@ -99,6 +99,10 @@
     <div class="booking-ref hidden" id="bookingRef"></div>
 </div>
 <div class="input-group">
+    <input type="text" id="userInput" placeholder="हिंदी में बोलें या टाइप करें — जैसे "लुकअप", "स्लॉट", "बुकिंग", "पुष्टि" / Speak or type in Hindi... />
+    <button class="btn btn-mic" id="micBtn" onclick="toggleMic()" title="हिंदी में बोलें / Speak in Hindi">🎙️</button>
+    <button class="btn btn-primary" onclick="sendInput()">भेजें / Send</button>
+</div>
 <script>
     const ttsAudio = document.getElementById('ttsAudio');
     const replayBtn = document.getElementById('replayBtn');
